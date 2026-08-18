@@ -6,13 +6,14 @@
 <title>Agendar horário</title>
 <style>
   :root{
-    --ink:#132024;
-    --ink-soft:#3c4d52;
-    --paper:#f3f0ea;
-    --line:#d8d2c4;
-    --accent:#c1502e;
-    --accent-soft:#e9d9cf;
-    --ok:#2f6b4f;
+    --ink:#eceade;
+    --ink-soft:#9b9b8c;
+    --paper:#1b1c17;
+    --card:#25261f;
+    --line:#3a3c2f;
+    --accent:#c9a648;
+    --accent-soft:#3a4a1c;
+    --ok:#7fae5a;
     --radius:2px;
   }
   *{box-sizing:border-box;}
@@ -49,7 +50,7 @@
   input[type=date], input[type=text], input[type=tel], input[type=email], textarea{
     width:100%;padding:12px 14px;font-family:'Helvetica Neue',Arial,sans-serif;
     font-size:.95rem;border:1px solid var(--line);border-radius:var(--radius);
-    background:#fff;color:var(--ink);
+    background:var(--card);color:var(--ink);
   }
   textarea{resize:vertical;min-height:70px;}
   .slots{
@@ -59,28 +60,28 @@
   .slot{
     font-family:'Helvetica Neue',Arial,sans-serif;
     padding:12px 6px;text-align:center;border:1px solid var(--line);
-    border-radius:var(--radius);cursor:pointer;font-size:.88rem;background:#fff;
+    border-radius:var(--radius);cursor:pointer;font-size:.88rem;background:var(--card);
     transition:border-color .15s, background .15s;
   }
   .slot:hover:not(.taken):not(.selected){border-color:var(--ink-soft);}
-  .slot.selected{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .slot.selected{background:var(--accent);color:#1b1c17;border-color:var(--accent);font-weight:700;}
   .slot.taken{
-    color:#a89f8f;background:#eae5d9;cursor:not-allowed;text-decoration:line-through;
+    color:#6b6b60;background:#1f2019;cursor:not-allowed;text-decoration:line-through;
   }
   .slot.closed-day{grid-column:1/-1;text-align:left;color:var(--ink-soft);padding:16px 0;border:none;background:transparent;cursor:default;}
   button.submit{
     width:100%;padding:15px;margin-top:8px;
     font-family:'Helvetica Neue',Arial,sans-serif;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;
-    background:var(--accent);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;
+    background:var(--accent);color:#1b1c17;font-weight:700;border:none;border-radius:var(--radius);cursor:pointer;
   }
-  button.submit:disabled{background:#c9beae;cursor:not-allowed;}
-  button.submit:hover:not(:disabled){background:#a5401f;}
+  button.submit:disabled{background:#33341f;color:#6b6b60;cursor:not-allowed;}
+  button.submit:hover:not(:disabled){background:#e0bd5f;}
   .msg{
     margin-top:18px;padding:14px 16px;border-radius:var(--radius);
     font-family:'Helvetica Neue',Arial,sans-serif;font-size:.85rem;
   }
-  .msg.ok{background:#e2ede6;color:var(--ok);border:1px solid #b9d4c3;}
-  .msg.err{background:#fbe6e0;color:var(--accent);border:1px solid #f0c3b4;}
+  .msg.ok{background:#1f3312;color:#a9d97e;border:1px solid #3a5a24;}
+  .msg.err{background:#3a1f1c;color:#e0897d;border:1px solid #5a352f;}
   .selected-summary{
     font-family:'Helvetica Neue',Arial,sans-serif;font-size:.82rem;color:var(--ink-soft);
     margin-top:10px;
@@ -125,10 +126,10 @@
     width:18px;height:18px;border-radius:50%;border:1.5px solid var(--ink-soft);
     display:inline-block;position:relative;
   }
-  .barber-table tr:hover td{background:#efe9dc;}
-  .barber-table tr.selected td{background:var(--ink);color:#fff;}
+  .barber-table tr:hover td{background:var(--card);}
+  .barber-table tr.selected td{background:var(--accent);color:#1b1c17;}
   .barber-table tr.selected .b-specialty{color:#c7cdcf;}
-  .barber-table tr.selected .b-radio{border-color:#fff;}
+  .barber-table tr.selected .b-radio{border-color:#1b1c17;}
   .barber-table tr.selected .b-radio::after{
     content:'';position:absolute;inset:3px;border-radius:50%;background:var(--accent);
   }
@@ -141,8 +142,8 @@
     font-family:'Helvetica Neue',Arial,sans-serif;
   }
   .service-row + .service-row{border-top:none;}
-  .service-row:hover{background:#efe9dc;}
-  .service-row.checked{background:var(--ink);color:#fff;}
+  .service-row:hover{background:var(--card);}
+  .service-row.checked{background:var(--accent);color:#1b1c17;}
   .service-row.checked .service-duration{color:#c7cdcf;}
   .service-left{display:flex;align-items:center;gap:12px;}
   .service-checkbox{
