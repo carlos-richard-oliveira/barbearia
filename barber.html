@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minha Agenda — Barbeiro</title>
+<style>
+  :root{
+    --ink:#eceade;--ink-soft:#9b9b8c;--paper:#1b1c17;--card:#25261f;--line:#3a3c2f;
+    --accent:#c9a648;--accent-soft:#3a4a1c;--ok:#7fae5a;--radius:2px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Helvetica Neue',Arial,sans-serif;}
+  .wrap{max-width:900px;margin:0 auto;padding:48px 24px 80px;}
+  h1{font-family:'Iowan Old Style',Georgia,serif;font-size:1.5rem;margin:0 0 6px;}
+  .eyebrow{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);}
+  #loginBox{max-width:340px;margin-top:60px;}
+  #loginBox input{
+    width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius);
+    margin-bottom:12px;font-size:.95rem;
+  }
+  input, select, textarea{
+    padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius);
+    font-family:inherit;font-size:.9rem;background:var(--card);color:var(--ink);
+  }
+  button{
+    padding:12px 20px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius);
+    cursor:pointer;font-size:.85rem;letter-spacing:.04em;text-transform:uppercase;
+  }
+  button.accent{background:var(--accent);color:#1b1c17;font-weight:700;border-color:var(--accent);}
+  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);}
+  button:disabled{background:#c9beae;cursor:not-allowed;}
+  table{width:100%;border-collapse:collapse;margin-top:20px;font-size:.85rem;}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);}
+  th{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);}
+  tr.cancelado td{color:#6b6b60;text-decoration:line-through;}
+  .msg{margin-top:16px;padding:12px 16px;border-radius:var(--radius);font-size:.85rem;}
+  .msg.ok{background:#1f3312;color:#a9d97e;border:1px solid #3a5a24;}
+  .msg.err{background:#3a1f1c;color:#e0897d;border:1px solid #5a352f;}
+  .top-row{display:flex;justify-content:space-between;align-items:center;}
+  .panel-tabs{display:flex;gap:0;margin-top:24px;border-bottom:1px solid var(--line);}
+  .panel-tab{
+    padding:10px 18px;background:transparent;border:none;cursor:pointer;
+    font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);
+    border-bottom:2px solid transparent;margin-bottom:-1px;
+  }
+  .panel-tab.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600;}
+  .box{margin-top:20px;padding:20px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);}
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-soft);margin-bottom:6px;
+  }
+  .field input, .field textarea{width:100%;}
+  .services-list{display:flex;flex-direction:column;gap:0;}
+  .service-row{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:10px 14px;border:1px solid var(--line);cursor:pointer;
+  }
+  .service-row + .service-row{border-top:none;}
+  .service-row:hover{background:var(--card);}
+  .service-row.checked{background:var(--accent);color:#1b1c17;}
+  .service-row.checked .service-duration{color:#c7cdcf;}
+  .service-checkbox{
+    width:16px;height:16px;border:1.5px solid var(--ink-soft);border-radius:3px;
+    display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .service-row.checked .service-checkbox{background:var(--accent);border-color:var(--accent);}
+  .service-checkbox svg{display:none;width:11px;height:11px;}
+  .service-row.checked .service-checkbox svg{display:block;}
+  .service-name{font-size:.85rem;}
+  .service-duration{font-size:.75rem;color:var(--ink-soft);white-space:nowrap;}
+  .slots{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:4px;}
+  @media(max-width:640px){.slots{grid-template-columns:repeat(3,1fr);}}
+  .slot{
+    padding:10px 4px;text-align:center;border:1px solid var(--line);border-radius:var(--radius);
+    cursor:pointer;font-size:.82rem;background:var(--card);
+  }
+  .slot:hover:not(.taken):not(.selected){border-color:var(--ink-soft);}
+  .slot.selected{background:var(--accent);color:#1b1c17;border-color:var(--accent);font-weight:700;}
+  .slot.taken{color:#6b6b60;background:#1f2019;cursor:not-allowed;text-decoration:line-through;}
+  .empty-note{font-size:.85rem;color:var(--ink-soft);}
+  .summary-line{font-size:.8rem;color:var(--ink-soft);margin-top:8px;}
+  .status-pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.72rem;}
+  .status-pill.active{background:#1f3312;color:#a9d97e;}
+  .status-pill.pending{background:#3a2d1a;color:#e0b269;}
+  dialog{border:none;border-radius:var(--radius);padding:24px;max-width:340px;width:90%;background:var(--card);color:var(--ink);}
+  dialog::backdrop{background:rgba(0,0,0,.6);}
+  select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius);font-family:inherit;font-size:.9rem;background:var(--card);color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="loginBox">
+    <div class="eyebrow">Área do barbeiro</div>
+    <h1>Minha Agenda</h1>
+    <input type="tel" id="phone" placeholder="Seu telefone (login)">
+    <input type="password" id="password" placeholder="Senha">
+    <button id="loginBtn">Entrar</button>
+    <div id="loginMsg"></div>
+  </div>
+
+  <div id="panel" style="display:none;">
+    <div class="top-row">
+      <div>
+        <div class="eyebrow">Minha agenda</div>
+        <h1 id="barberName">—</h1>
+      </div>
+      <button class="ghost" id="logoutBtn">Sair</button>
+    </div>
+
+    <div class="panel-tabs">
+      <button class="panel-tab active" id="tabAgenda">Meus agendamentos</button>
+      <button class="panel-tab" id="tabNewBooking">Agendar cliente</button>
+      <button class="panel-tab" id="tabConnections">Conexões</button>
+    </div>
+
+    <div id="panelMsg"></div>
+
+    <!-- ===== Meus agendamentos ===== -->
+    <div id="agendaView">
+      <table>
+        <thead>
+          <tr><th>Data</th><th>Hora</th><th>Duração</th><th>Serviços</th><th>Cliente</th><th>Telefone</th><th>Valor</th><th>Pagamento</th><th>Status</th></tr>
+        </thead>
+        <tbody id="bookingsTbody"></tbody>
+      </table>
+    </div>
+
+    <!-- ===== Agendar cliente ===== -->
+    <div id="newBookingView" style="display:none;">
+      <div class="box">
+        <div class="field">
+          <label>Serviço(s)</label>
+          <div class="services-list" id="servicesList"></div>
+          <div class="summary-line" id="servicesSummary"></div>
+        </div>
+
+        <div class="field">
+          <label for="bookDate">Data</label>
+          <input type="date" id="bookDate">
+        </div>
+
+        <div class="field">
+          <label>Horário disponível</label>
+          <div class="slots" id="slots"><div class="empty-note">Escolha o serviço e a data.</div></div>
+        </div>
+
+        <div class="field">
+          <label for="clientName">Nome do cliente</label>
+          <input type="text" id="clientName" placeholder="Nome completo">
+        </div>
+        <div class="field">
+          <label for="clientPhone">Telefone do cliente</label>
+          <input type="tel" id="clientPhone" placeholder="(11) 90000-0000">
+        </div>
+        <div class="field">
+          <label for="clientCpf">CPF do cliente (opcional)</label>
+          <input type="text" id="clientCpf" placeholder="000.000.000-00" maxlength="14">
+        </div>
+        <div class="field">
+          <label for="clientNotes">Observações (opcional)</label>
+          <textarea id="clientNotes" rows="2" style="width:100%;"></textarea>
+        </div>
+
+        <button class="accent" id="createBookingBtn">Confirmar agendamento</button>
+        <div id="bookingMsg"></div>
+      </div>
+    </div>
+
+    <!-- ===== Conexões pessoais (WhatsApp e Google Calendar) ===== -->
+    <div id="connectionsView" style="display:none;">
+      <div class="box">
+        <h2 style="font-family:'Iowan Old Style',Georgia,serif;font-size:1.05rem;margin:0 0 4px;">WhatsApp</h2>
+        <p class="hint-text" style="margin:0 0 14px;">Conecte seu WhatsApp pessoal para receber um aviso toda vez que um cliente marcar (ou você marcar) um horário.</p>
+        <div id="waConnectedBox" style="display:none;">
+          <p style="margin:0 0 12px;">Conectado: <strong id="waConnectedPhone"></strong></p>
+          <button class="ghost" id="waDisconnectBtn">Desconectar</button>
+        </div>
+        <div id="waConnectBox">
+          <div class="field">
+            <label for="waPhone">Seu número de WhatsApp</label>
+            <input type="tel" id="waPhone" placeholder="(11) 90000-0000">
+          </div>
+          <button class="accent" id="waConnectBtn">Conectar WhatsApp</button>
+        </div>
+        <div id="waMsg"></div>
+      </div>
+
+      <div class="box">
+        <h2 style="font-family:'Iowan Old Style',Georgia,serif;font-size:1.05rem;margin:0 0 4px;">Google Calendar</h2>
+        <p class="hint-text" style="margin:0 0 14px;">Conecte seu e-mail do Google para ver e sincronizar sua agenda pessoal automaticamente com os agendamentos daqui.</p>
+        <div id="gcalConnectedBox" style="display:none;">
+          <p style="margin:0 0 12px;">Conectado: <strong id="gcalConnectedEmail"></strong></p>
+          <button class="ghost" id="gcalDisconnectBtn">Desconectar</button>
+        </div>
+        <div id="gcalConnectBox">
+          <a id="gcalConnectLink" href="#"><button class="accent" type="button">Conectar Google Calendar</button></a>
+        </div>
+        <div id="gcalMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="payDialog">
+    <h2 style="font-family:'Iowan Old Style',Georgia,serif;font-size:1.1rem;margin:0;">Fechar conta</h2>
+    <p id="payDialogSummary" style="font-size:.85rem;color:var(--ink-soft);margin:10px 0 4px;"></p>
+    <label for="payMethod">Forma de pagamento</label>
+    <select id="payMethod">
+      <option value="pix">Pix</option>
+      <option value="debito">Cartão de débito</option>
+      <option value="credito">Cartão de crédito</option>
+      <option value="dinheiro">Dinheiro</option>
+    </select>
+    <div id="payDialogMsg"></div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button class="accent" id="confirmPay">Confirmar pagamento</button>
+      <button class="ghost" id="cancelPayDialog">Cancelar</button>
+    </div>
+  </dialog>
+
+</div>
+
+<script>
+const API = '';
+let token = sessionStorage.getItem('barberToken') || null;
+let barberInfo = JSON.parse(sessionStorage.getItem('barberInfo') || 'null');
+let allServices = [];
+let selectedServiceIds = [];
+let selectedTime = null;
+
+const loginBox = document.getElementById('loginBox');
+const panel = document.getElementById('panel');
+const tabAgenda = document.getElementById('tabAgenda');
+const tabNewBooking = document.getElementById('tabNewBooking');
+const tabConnections = document.getElementById('tabConnections');
+const agendaView = document.getElementById('agendaView');
+const newBookingView = document.getElementById('newBookingView');
+const connectionsView = document.getElementById('connectionsView');
+const servicesListEl = document.getElementById('servicesList');
+const servicesSummaryEl = document.getElementById('servicesSummary');
+const bookDate = document.getElementById('bookDate');
+const slotsEl = document.getElementById('slots');
+const createBookingBtn = document.getElementById('createBookingBtn');
+
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+bookDate.min = todayISO();
+bookDate.value = todayISO();
+
+function showPanel(){
+  loginBox.style.display = 'none';
+  panel.style.display = 'block';
+  document.getElementById('barberName').textContent = barberInfo.name;
+  loadBookings();
+  loadServices();
+  loadConnections();
+}
+
+if(token && barberInfo) showPanel();
+
+document.getElementById('loginBtn').addEventListener('click', async ()=>{
+  const phone = document.getElementById('phone').value.trim();
+  const password = document.getElementById('password').value;
+  const loginMsg = document.getElementById('loginMsg');
+  loginMsg.innerHTML = '';
+
+  if(!phone || !password){
+    loginMsg.innerHTML = '<div class="msg err">Preencha telefone e senha.</div>';
+    return;
+  }
+
+  try{
+    const res = await fetch(`${API}/api/barber/login`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({phone, password})
+    });
+    const data = await res.json();
+    if(!res.ok){
+      loginMsg.innerHTML = `<div class="msg err">${data.error}</div>`;
+      return;
+    }
+    token = data.token;
+    barberInfo = data.barber;
+    sessionStorage.setItem('barberToken', token);
+    sessionStorage.setItem('barberInfo', JSON.stringify(barberInfo));
+    showPanel();
+  }catch(err){
+    loginMsg.innerHTML = '<div class="msg err">Erro de conexão. Tente novamente.</div>';
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  sessionStorage.removeItem('barberToken');
+  sessionStorage.removeItem('barberInfo');
+  token = null; barberInfo = null;
+  panel.style.display='none';
+  loginBox.style.display='block';
+});
+
+function activateTab(tab){
+  [tabAgenda, tabNewBooking, tabConnections].forEach(t=>t.classList.remove('active'));
+  [agendaView, newBookingView, connectionsView].forEach(v=>v.style.display = 'none');
+  tab.el.classList.add('active');
+  tab.view.style.display = 'block';
+}
+tabAgenda.addEventListener('click', ()=> activateTab({el:tabAgenda, view:agendaView}));
+tabNewBooking.addEventListener('click', ()=> activateTab({el:tabNewBooking, view:newBookingView}));
+tabConnections.addEventListener('click', ()=> { activateTab({el:tabConnections, view:connectionsView}); loadConnections(); });
+
+// ===== Conexões pessoais (WhatsApp e Google Calendar) =====
+async function loadConnections(){
+  const res = await fetch(`${API}/api/barber/me`, { headers:{Authorization:`Bearer ${token}`} });
+  if(handleAuthFail(res)) return;
+  const me = await res.json();
+
+  const waConnected = document.getElementById('waConnectedBox');
+  const waConnectBoxEl = document.getElementById('waConnectBox');
+  if(me.whatsappPhone){
+    waConnected.style.display = 'block';
+    waConnectBoxEl.style.display = 'none';
+    document.getElementById('waConnectedPhone').textContent = me.whatsappPhone;
+  } else {
+    waConnected.style.display = 'none';
+    waConnectBoxEl.style.display = 'block';
+  }
+
+  const gcalConnected = document.getElementById('gcalConnectedBox');
+  const gcalConnectBoxEl = document.getElementById('gcalConnectBox');
+  if(me.googleConnected){
+    gcalConnected.style.display = 'block';
+    gcalConnectBoxEl.style.display = 'none';
+    document.getElementById('gcalConnectedEmail').textContent = me.googleEmail || '';
+  } else {
+    gcalConnected.style.display = 'none';
+    gcalConnectBoxEl.style.display = 'block';
+    // O token vai na URL porque é um link clicado (não dá pra mandar header de Authorization numa navegação normal)
+    document.getElementById('gcalConnectLink').href = `${API}/api/barber/google/connect?token=${encodeURIComponent(token)}`;
+  }
+}
+
+document.getElementById('waConnectBtn').addEventListener('click', async ()=>{
+  const phone = document.getElementById('waPhone').value.trim();
+  const waMsg = document.getElementById('waMsg');
+  waMsg.innerHTML = '';
+  if(!phone){ waMsg.innerHTML = '<div class="msg err">Informe seu número de WhatsApp.</div>'; return; }
+  const res = await fetch(`${API}/api/barber/whatsapp`, {
+    method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
+    body: JSON.stringify({ phone })
+  });
+  const data = await res.json();
+  if(!res.ok){ waMsg.innerHTML = `<div class="msg err">${data.error}</div>`; return; }
+  waMsg.innerHTML = '<div class="msg ok">WhatsApp conectado!</div>';
+  loadConnections();
+});
+
+document.getElementById('waDisconnectBtn').addEventListener('click', async ()=>{
+  await fetch(`${API}/api/barber/whatsapp`, { method:'DELETE', headers:{Authorization:`Bearer ${token}`} });
+  loadConnections();
+});
+
+document.getElementById('gcalDisconnectBtn').addEventListener('click', async ()=>{
+  await fetch(`${API}/api/barber/google`, { method:'DELETE', headers:{Authorization:`Bearer ${token}`} });
+  loadConnections();
+});
+
+function handleAuthFail(res){
+  if(res.status === 401){
+    sessionStorage.removeItem('barberToken');
+    sessionStorage.removeItem('barberInfo');
+    token = null; barberInfo = null;
+    panel.style.display='none';
+    loginBox.style.display='block';
+    return true;
+  }
+  return false;
+}
+
+// ===== Meus agendamentos =====
+async function loadBookings(){
+  const res = await fetch(`${API}/api/barber/bookings`, { headers:{Authorization:`Bearer ${token}`} });
+  if(handleAuthFail(res)) return;
+  const data = await res.json();
+  const tbody = document.getElementById('bookingsTbody');
+  tbody.innerHTML = '';
+  if(data.bookings.length === 0){
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-note">Nenhum agendamento ainda.</td></tr>';
+    return;
+  }
+  data.bookings.forEach(b=>{
+    const tr = document.createElement('tr');
+    tr.className = b.status;
+    const priceText = (b.price !== null && b.price !== undefined) ? `R$ ${b.price.toFixed(2)}` : '—';
+    const payCell = b.paid
+      ? `<span class="status-pill active">Pago (${b.paymentMethod})</span>`
+      : (b.status !== 'cancelado' ? `<button class="ghost" data-action="pay" data-id="${b.id}">Fechar conta</button>` : '—');
+    tr.innerHTML = `
+      <td>${b.date}</td>
+      <td>${b.time}</td>
+      <td>${b.duration ? b.duration + ' min' : '—'}</td>
+      <td>${b.services ? b.services.map(s=>s.name).join(', ') : '—'}</td>
+      <td>${b.name}</td>
+      <td>${b.phone}</td>
+      <td>${priceText}</td>
+      <td>${payCell}</td>
+      <td>${b.status}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('[data-action=pay]').forEach(btn=>{
+    btn.addEventListener('click', ()=> openPayDialog(btn.dataset.id));
+  });
+}
+
+// ===== Fechar conta (split payment) =====
+let payBookingId = null;
+const payDialog = document.getElementById('payDialog');
+
+function openPayDialog(bookingId){
+  payBookingId = bookingId;
+  document.getElementById('payDialogMsg').innerHTML = '';
+  document.getElementById('payDialogSummary').textContent = 'Escolha a forma de pagamento para fechar essa conta.';
+  payDialog.showModal();
+}
+document.getElementById('cancelPayDialog').addEventListener('click', ()=> payDialog.close());
+
+document.getElementById('confirmPay').addEventListener('click', async ()=>{
+  const method = document.getElementById('payMethod').value;
+  const msgEl = document.getElementById('payDialogMsg');
+  msgEl.innerHTML = '';
+  try{
+    const res = await fetch(`${API}/api/barber/bookings/${payBookingId}/pay`, {
+      method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
+      body: JSON.stringify({ method })
+    });
+    const data = await res.json();
+    if(!res.ok){
+      msgEl.innerHTML = `<div class="msg err">${data.error}</div>`;
+      return;
+    }
+    const b = data.booking;
+    msgEl.innerHTML = `<div class="msg ok">Pago! Sua parte: R$ ${b.barberShare.toFixed(2)} (taxa máquina R$ ${b.machineFee.toFixed(2)}, loja R$ ${b.storeShare.toFixed(2)})</div>`;
+    loadBookings();
+    setTimeout(()=> payDialog.close(), 1800);
+  }catch(err){
+    msgEl.innerHTML = '<div class="msg err">Erro de conexão. Tente novamente.</div>';
+  }
+});
+
+// ===== Serviços (para o form de novo agendamento) =====
+function totalDuration(){
+  return selectedServiceIds.reduce((sum, id)=>{
+    const s = allServices.find(x=>x.id===id);
+    return sum + (s ? s.minutes : 0);
+  }, 0);
+}
+function updateServicesSummary(){
+  if(selectedServiceIds.length === 0){ servicesSummaryEl.textContent=''; return; }
+  const names = selectedServiceIds.map(id=>allServices.find(x=>x.id===id)?.name).join(' + ');
+  servicesSummaryEl.textContent = `${names} — total: ${totalDuration()} min`;
+}
+
+async function loadServices(){
+  servicesListEl.innerHTML = '<div class="empty-note">Carregando serviços…</div>';
+  const res = await fetch(`${API}/api/services`);
+  const data = await res.json();
+  allServices = data.services;
+  servicesListEl.innerHTML = '';
+  allServices.forEach(service=>{
+    const row = document.createElement('div');
+    row.className = 'service-row';
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="service-checkbox"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
+        <span class="service-name">${service.name}</span>
+      </div>
+      <span class="service-duration">${service.minutes} min</span>
+    `;
+    row.addEventListener('click', ()=>{
+      const idx = selectedServiceIds.indexOf(service.id);
+      if(idx === -1){ selectedServiceIds.push(service.id); row.classList.add('checked'); }
+      else { selectedServiceIds.splice(idx,1); row.classList.remove('checked'); }
+      updateServicesSummary();
+      loadSlots();
+    });
+    servicesListEl.appendChild(row);
+  });
+}
+
+// ===== Horários (agenda própria do barbeiro logado) =====
+async function loadSlots(){
+  selectedTime = null;
+  createBookingBtn.disabled = true;
+  const date = bookDate.value;
+  const duration = totalDuration();
+  if(!date || !duration){
+    slotsEl.innerHTML = '<div class="empty-note">Escolha o serviço e a data.</div>';
+    return;
+  }
+  slotsEl.innerHTML = '<div class="empty-note">Carregando horários…</div>';
+  const res = await fetch(`${API}/api/slots?date=${date}&barberId=${barberInfo.id}&duration=${duration}`);
+  const data = await res.json();
+  if(!data.open){
+    slotsEl.innerHTML = '<div class="empty-note">Fora do horário de funcionamento (terça a sábado).</div>';
+    return;
+  }
+  slotsEl.innerHTML = '';
+  data.slots.forEach(s=>{
+    const div = document.createElement('div');
+    div.className = 'slot' + (s.available ? '' : ' taken');
+    div.textContent = s.time;
+    if(s.available){
+      div.addEventListener('click', ()=>{
+        document.querySelectorAll('.slot').forEach(el=>el.classList.remove('selected'));
+        div.classList.add('selected');
+        selectedTime = s.time;
+        createBookingBtn.disabled = false;
+      });
+    }
+    slotsEl.appendChild(div);
+  });
+}
+bookDate.addEventListener('change', loadSlots);
+
+createBookingBtn.addEventListener('click', async ()=>{
+  const bookingMsg = document.getElementById('bookingMsg');
+  bookingMsg.innerHTML = '';
+  const clientName = document.getElementById('clientName').value.trim();
+  const clientPhone = document.getElementById('clientPhone').value.trim();
+  const clientCpf = document.getElementById('clientCpf').value.trim();
+  const notes = document.getElementById('clientNotes').value.trim();
+
+  if(!clientName || !clientPhone){
+    bookingMsg.innerHTML = '<div class="msg err">Informe nome e telefone do cliente.</div>';
+    return;
+  }
+  if(selectedServiceIds.length === 0 || !selectedTime){
+    bookingMsg.innerHTML = '<div class="msg err">Escolha o serviço e o horário.</div>';
+    return;
+  }
+
+  createBookingBtn.disabled = true;
+  try{
+    const res = await fetch(`${API}/api/barber/book`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
+      body: JSON.stringify({
+        date: bookDate.value, time: selectedTime, serviceIds: selectedServiceIds,
+        clientName, clientPhone, clientCpf, notes
+      })
+    });
+    const data = await res.json();
+    if(!res.ok){
+      bookingMsg.innerHTML = `<div class="msg err">${data.error}</div>`;
+      createBookingBtn.disabled = false;
+      loadSlots();
+      return;
+    }
+    bookingMsg.innerHTML = `<div class="msg ok">Agendamento criado para ${clientName} em ${bookDate.value} às ${selectedTime}.</div>`;
+    document.getElementById('clientName').value = '';
+    document.getElementById('clientPhone').value = '';
+    document.getElementById('clientCpf').value = '';
+    document.getElementById('clientNotes').value = '';
+    selectedServiceIds = [];
+    document.querySelectorAll('.service-row').forEach(el=>el.classList.remove('checked'));
+    updateServicesSummary();
+    loadSlots();
+    loadBookings();
+  }catch(err){
+    bookingMsg.innerHTML = '<div class="msg err">Erro de conexão. Tente novamente.</div>';
+    createBookingBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

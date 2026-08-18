@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agendar horário</title>
+<style>
+  :root{
+    --ink:#eceade;
+    --ink-soft:#9b9b8c;
+    --paper:#1b1c17;
+    --card:#25261f;
+    --line:#3a3c2f;
+    --accent:#c9a648;
+    --accent-soft:#3a4a1c;
+    --ok:#7fae5a;
+    --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family: 'Iowan Old Style','Georgia',serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:48px 24px 80px;}
+  header{
+    display:flex;justify-content:space-between;align-items:baseline;
+    border-bottom:1px solid var(--line);
+    padding-bottom:18px;margin-bottom:36px;
+  }
+  h1{
+    font-size:1.5rem;letter-spacing:.02em;margin:0;font-weight:600;
+  }
+  .eyebrow{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);
+  }
+  .hours-note{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:.78rem;color:var(--ink-soft);
+  }
+  .field{margin-bottom:22px;}
+  label{
+    display:block;font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-soft);margin-bottom:8px;
+  }
+  input[type=date], input[type=text], input[type=tel], input[type=email], input[type=password], textarea{
+    width:100%;padding:12px 14px;font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:.95rem;border:1px solid var(--line);border-radius:var(--radius);
+    background:var(--card);color:var(--ink);
+  }
+  textarea{resize:vertical;min-height:70px;}
+  .slots{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:4px;
+  }
+  @media(max-width:520px){.slots{grid-template-columns:repeat(2,1fr);}}
+  .slot{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    padding:12px 6px;text-align:center;border:1px solid var(--line);
+    border-radius:var(--radius);cursor:pointer;font-size:.88rem;background:var(--card);
+    transition:border-color .15s, background .15s;
+  }
+  .slot:hover:not(.taken):not(.selected){border-color:var(--ink-soft);}
+  .slot.selected{background:var(--accent);color:#1b1c17;border-color:var(--accent);font-weight:700;}
+  .slot.taken{
+    color:#6b6b60;background:#1f2019;cursor:not-allowed;text-decoration:line-through;
+  }
+  .slot.closed-day{grid-column:1/-1;text-align:left;color:var(--ink-soft);padding:16px 0;border:none;background:transparent;cursor:default;}
+  button.submit{
+    width:100%;padding:15px;margin-top:8px;
+    font-family:'Helvetica Neue',Arial,sans-serif;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;
+    background:var(--accent);color:#1b1c17;font-weight:700;border:none;border-radius:var(--radius);cursor:pointer;
+  }
+  button.submit:disabled{background:#33341f;color:#6b6b60;cursor:not-allowed;}
+  button.submit:hover:not(:disabled){background:#e0bd5f;}
+  .msg{
+    margin-top:18px;padding:14px 16px;border-radius:var(--radius);
+    font-family:'Helvetica Neue',Arial,sans-serif;font-size:.85rem;
+  }
+  .msg.ok{background:#1f3312;color:#a9d97e;border:1px solid #3a5a24;}
+  .msg.err{background:#3a1f1c;color:#e0897d;border:1px solid #5a352f;}
+  .selected-summary{
+    font-family:'Helvetica Neue',Arial,sans-serif;font-size:.82rem;color:var(--ink-soft);
+    margin-top:10px;
+  }
+  footer{margin-top:60px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:.7rem;color:var(--ink-soft);text-align:center;}
+  footer a{color:var(--ink-soft);}
+  .user-bar{
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'Helvetica Neue',Arial,sans-serif;font-size:.8rem;color:var(--ink-soft);
+    border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:28px;
+  }
+  .user-bar strong{color:var(--ink);}
+  .user-bar button{
+    background:transparent;border:1px solid var(--line);color:var(--ink-soft);
+    padding:6px 12px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:.72rem;
+    text-transform:uppercase;letter-spacing:.05em;border-radius:var(--radius);cursor:pointer;
+  }
+  .auth-tabs{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--line);}
+  .auth-tab{
+    flex:1;padding:12px 0;background:transparent;border:none;cursor:pointer;
+    font-family:'Helvetica Neue',Arial,sans-serif;font-size:.8rem;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--ink-soft);border-bottom:2px solid transparent;
+    margin-bottom:-1px;
+  }
+  .auth-tab.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600;}
+  .link-btn{
+    background:none;border:none;padding:0;color:var(--accent);cursor:pointer;
+    font-family:inherit;font-size:inherit;text-decoration:underline;
+  }
+  .barber-table{width:100%;border-collapse:collapse;}
+  .barber-table tr{
+    cursor:pointer;border:1px solid var(--line);
+  }
+  .barber-table tr + tr{border-top:none;}
+  .barber-table td{
+    padding:14px 16px;font-family:'Helvetica Neue',Arial,sans-serif;
+    transition:background .15s;
+  }
+  .barber-table .b-name{font-weight:600;font-size:.92rem;}
+  .barber-table .b-specialty{font-size:.78rem;color:var(--ink-soft);}
+  .barber-table .b-radio{
+    width:18px;height:18px;border-radius:50%;border:1.5px solid var(--ink-soft);
+    display:inline-block;position:relative;
+  }
+  .barber-table tr:hover td{background:var(--card);}
+  .barber-table tr.selected td{background:var(--accent);color:#1b1c17;}
+  .barber-table tr.selected .b-specialty{color:#c7cdcf;}
+  .barber-table tr.selected .b-radio{border-color:#1b1c17;}
+  .barber-table tr.selected .b-radio::after{
+    content:'';position:absolute;inset:3px;border-radius:50%;background:var(--accent);
+  }
+  .barber-table td.b-radio-cell{width:30px;}
+  .empty-note{font-family:'Helvetica Neue',Arial,sans-serif;font-size:.85rem;color:var(--ink-soft);}
+  .services-list{display:flex;flex-direction:column;gap:0;}
+  .service-row{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px 14px;border:1px solid var(--line);cursor:pointer;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+  }
+  .service-row + .service-row{border-top:none;}
+  .service-row:hover{background:var(--card);}
+  .service-row.checked{background:var(--accent);color:#1b1c17;}
+  .service-row.checked .service-duration{color:#c7cdcf;}
+  .service-left{display:flex;align-items:center;gap:12px;}
+  .service-checkbox{
+    width:18px;height:18px;border:1.5px solid var(--ink-soft);border-radius:3px;
+    display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .service-row.checked .service-checkbox{background:var(--accent);border-color:var(--accent);}
+  .service-checkbox svg{display:none;width:12px;height:12px;}
+  .service-row.checked .service-checkbox svg{display:block;}
+  .service-name{font-size:.9rem;}
+  .service-duration{font-size:.78rem;color:var(--ink-soft);white-space:nowrap;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Agendamento</div>
+      <h1 id="businessName">Carregando…</h1>
+    </div>
+    <div class="hours-note">Terça a sábado · 10h às 18h</div>
+  </header>
+
+  <!-- ===== Etapa de autenticação (login ou cadastro) ===== -->
+  <div id="authStep">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin">Entrar</button>
+      <button class="auth-tab" id="tabSignup">Cadastre-se</button>
+    </div>
+
+    <!-- Login -->
+    <div id="loginForm">
+      <div class="field">
+        <label for="loginCpf">CPF</label>
+        <input type="text" id="loginCpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
+      </div>
+      <div class="field">
+        <label for="loginPassword">Senha</label>
+        <input type="password" id="loginPassword" placeholder="Sua senha">
+      </div>
+      <button class="submit" id="loginBtn">Entrar</button>
+      <div id="loginMsg"></div>
+    </div>
+
+    <!-- Cadastro -->
+    <div id="signupForm" style="display:none;">
+      <div class="field">
+        <label for="signupName">Nome completo</label>
+        <input type="text" id="signupName" placeholder="Seu nome">
+      </div>
+      <div class="field">
+        <label for="signupCpf">CPF</label>
+        <input type="text" id="signupCpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
+      </div>
+      <div class="field">
+        <label for="signupPhone">Telefone / WhatsApp</label>
+        <input type="tel" id="signupPhone" placeholder="(11) 90000-0000">
+      </div>
+      <div class="field">
+        <label for="signupPassword">Senha</label>
+        <input type="password" id="signupPassword" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="field">
+        <label for="signupPassword2">Confirmar senha</label>
+        <input type="password" id="signupPassword2" placeholder="Repita a senha">
+      </div>
+      <button class="submit" id="signupBtn">Criar conta</button>
+      <div id="signupMsg"></div>
+    </div>
+  </div>
+
+  <!-- ===== Etapa de agendamento (só aparece após login) ===== -->
+  <div id="bookingStep" style="display:none;">
+    <div class="user-bar" id="userBar"></div>
+
+    <div class="field">
+      <label>Escolha o barbeiro</label>
+      <table class="barber-table" id="barberTable">
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="field">
+      <label>Escolha o(s) serviço(s)</label>
+      <div class="services-list" id="servicesList"></div>
+      <div class="selected-summary" id="servicesSummary"></div>
+    </div>
+
+    <div class="field">
+      <label for="date">Escolha a data</label>
+      <input type="date" id="date">
+    </div>
+
+    <div class="field">
+      <label>Horários disponíveis</label>
+      <div class="slots" id="slots">
+        <div class="closed-day">Selecione um barbeiro e uma data acima.</div>
+      </div>
+      <div class="selected-summary" id="selectedSummary"></div>
+    </div>
+
+    <div class="field">
+      <label for="email">E-mail (opcional)</label>
+      <input type="email" id="email" placeholder="voce@email.com">
+    </div>
+    <div class="field">
+      <label for="notes">Observações (opcional)</label>
+      <textarea id="notes" placeholder="Algo que devamos saber antes do atendimento"></textarea>
+    </div>
+
+    <button class="submit" id="submitBtn" disabled>Confirmar agendamento</button>
+    <div id="msg"></div>
+  </div>
+
+  <footer>Painel administrativo: <a href="/admin.html">/admin.html</a> · Área do barbeiro: <a href="/barber.html">/barber.html</a></footer>
+</div>
+
+<script>
+const API = '';
+let selectedDate = null;
+let selectedTime = null;
+let selectedBarberId = null;
+let selectedServiceIds = [];
+let allServices = [];
+let authToken = localStorage.getItem('userToken') || null;
+let currentUser = JSON.parse(localStorage.getItem('userInfo') || 'null');
+
+const dateInput = document.getElementById('date');
+const slotsEl = document.getElementById('slots');
+const submitBtn = document.getElementById('submitBtn');
+const msgEl = document.getElementById('msg');
+const summaryEl = document.getElementById('selectedSummary');
+const authStep = document.getElementById('authStep');
+const bookingStep = document.getElementById('bookingStep');
+const barberTableBody = document.querySelector('#barberTable tbody');
+const servicesListEl = document.getElementById('servicesList');
+const servicesSummaryEl = document.getElementById('servicesSummary');
+const loginForm = document.getElementById('loginForm');
+const signupForm = document.getElementById('signupForm');
+const tabLogin = document.getElementById('tabLogin');
+const tabSignup = document.getElementById('tabSignup');
+
+function todayISO(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+dateInput.min = todayISO();
+dateInput.value = todayISO();
+
+fetch(API + '/api/config').then(r=>r.json()).then(cfg=>{
+  document.getElementById('businessName').textContent = cfg.businessName;
+});
+
+// ===== Alternar entre abas Entrar / Cadastre-se =====
+tabLogin.addEventListener('click', ()=>{
+  tabLogin.classList.add('active');
+  tabSignup.classList.remove('active');
+  loginForm.style.display = 'block';
+  signupForm.style.display = 'none';
+});
+tabSignup.addEventListener('click', ()=>{
+  tabSignup.classList.add('active');
+  tabLogin.classList.remove('active');
+  signupForm.style.display = 'block';
+  loginForm.style.display = 'none';
+});
+
+// ===== Máscara simples de CPF =====
+function maskCPF(input){
+  input.addEventListener('input', ()=>{
+    let v = input.value.replace(/\D/g,'').slice(0,11);
+    v = v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+    input.value = v;
+  });
+}
+maskCPF(document.getElementById('loginCpf'));
+maskCPF(document.getElementById('signupCpf'));
+
+function showBookingStep(){
+  authStep.style.display = 'none';
+  bookingStep.style.display = 'block';
+  document.getElementById('userBar').innerHTML =
+    `Agendando como <strong>${currentUser.name}</strong> (${currentUser.cpf}) &nbsp;·&nbsp; <button id="logoutBtn2">Sair</button>`;
+  document.getElementById('logoutBtn2').addEventListener('click', logout);
+  loadBarbers();
+  loadServices();
+}
+
+function totalDuration(){
+  return selectedServiceIds.reduce((sum, id) => {
+    const s = allServices.find(x => x.id === id);
+    return sum + (s ? s.minutes : 0);
+  }, 0);
+}
+
+function updateServicesSummary(){
+  if(selectedServiceIds.length === 0){
+    servicesSummaryEl.textContent = '';
+    return;
+  }
+  const names = selectedServiceIds.map(id => allServices.find(x => x.id === id)?.name).join(' + ');
+  servicesSummaryEl.textContent = `${names} — total: ${totalDuration()} min`;
+}
+
+async function loadServices(){
+  servicesListEl.innerHTML = '<div class="empty-note">Carregando serviços…</div>';
+  try{
+    const res = await fetch(`${API}/api/services`);
+    const data = await res.json();
+    allServices = data.services;
+    servicesListEl.innerHTML = '';
+    allServices.forEach(service=>{
+      const row = document.createElement('div');
+      row.className = 'service-row';
+      row.innerHTML = `
+        <div class="service-left">
+          <span class="service-checkbox">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+          </span>
+          <span class="service-name">${service.name}</span>
+        </div>
+        <span class="service-duration">${service.minutes} min</span>
+      `;
+      row.addEventListener('click', ()=>{
+        const idx = selectedServiceIds.indexOf(service.id);
+        if(idx === -1){
+          selectedServiceIds.push(service.id);
+          row.classList.add('checked');
+        } else {
+          selectedServiceIds.splice(idx, 1);
+          row.classList.remove('checked');
+        }
+        updateServicesSummary();
+        loadSlots();
+      });
+      servicesListEl.appendChild(row);
+    });
+  }catch(err){
+    servicesListEl.innerHTML = '<div class="empty-note">Erro ao carregar serviços.</div>';
+  }
+}
+
+async function loadBarbers(){
+  barberTableBody.innerHTML = '<tr><td class="empty-note">Carregando barbeiros…</td></tr>';
+  try{
+    const res = await fetch(`${API}/api/barbers`);
+    const data = await res.json();
+    if(!data.barbers || data.barbers.length === 0){
+      barberTableBody.innerHTML = '<tr><td class="empty-note">Nenhum barbeiro disponível no momento.</td></tr>';
+      return;
+    }
+    barberTableBody.innerHTML = '';
+    data.barbers.forEach(barber=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="b-radio-cell"><span class="b-radio"></span></td>
+        <td>
+          <div class="b-name">${barber.name}</div>
+          ${barber.specialty ? `<div class="b-specialty">${barber.specialty}</div>` : ''}
+        </td>
+      `;
+      tr.addEventListener('click', ()=>{
+        document.querySelectorAll('.barber-table tr').forEach(el=>el.classList.remove('selected'));
+        tr.classList.add('selected');
+        selectedBarberId = barber.id;
+        loadSlots();
+      });
+      barberTableBody.appendChild(tr);
+    });
+  }catch(err){
+    barberTableBody.innerHTML = '<tr><td class="empty-note">Erro ao carregar barbeiros.</td></tr>';
+  }
+}
+
+function logout(){
+  localStorage.removeItem('userToken');
+  localStorage.removeItem('userInfo');
+  authToken = null;
+  currentUser = null;
+  bookingStep.style.display = 'none';
+  authStep.style.display = 'block';
+}
+
+if(authToken && currentUser){
+  showBookingStep();
+}
+
+document.getElementById('loginBtn').addEventListener('click', async ()=>{
+  const cpf = document.getElementById('loginCpf').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const loginMsg = document.getElementById('loginMsg');
+  loginMsg.innerHTML = '';
+
+  if(!cpf || !password){
+    loginMsg.innerHTML = '<div class="msg err">Preencha CPF e senha.</div>';
+    return;
+  }
+
+  try{
+    const res = await fetch(`${API}/api/login`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({cpf, password})
+    });
+    const data = await res.json();
+    if(!res.ok){
+      loginMsg.innerHTML = `<div class="msg err">${data.error}</div>`;
+      return;
+    }
+    authToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem('userToken', authToken);
+    localStorage.setItem('userInfo', JSON.stringify(currentUser));
+    showBookingStep();
+  }catch(err){
+    loginMsg.innerHTML = '<div class="msg err">Erro de conexão. Tente novamente.</div>';
+  }
+});
+
+document.getElementById('signupBtn').addEventListener('click', async ()=>{
+  const name = document.getElementById('signupName').value.trim();
+  const cpf = document.getElementById('signupCpf').value.trim();
+  const phone = document.getElementById('signupPhone').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  const password2 = document.getElementById('signupPassword2').value;
+  const signupMsg = document.getElementById('signupMsg');
+  signupMsg.innerHTML = '';
+
+  if(!name || !cpf || !phone || !password){
+    signupMsg.innerHTML = '<div class="msg err">Preencha todos os campos.</div>';
+    return;
+  }
+  if(password.length < 6){
+    signupMsg.innerHTML = '<div class="msg err">A senha precisa ter pelo menos 6 caracteres.</div>';
+    return;
+  }
+  if(password !== password2){
+    signupMsg.innerHTML = '<div class="msg err">As senhas não coincidem.</div>';
+    return;
+  }
+
+  try{
+    const res = await fetch(`${API}/api/signup`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, cpf, phone, password})
+    });
+    const data = await res.json();
+    if(!res.ok){
+      signupMsg.innerHTML = `<div class="msg err">${data.error}</div>`;
+      return;
+    }
+    authToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem('userToken', authToken);
+    localStorage.setItem('userInfo', JSON.stringify(currentUser));
+    showBookingStep();
+  }catch(err){
+    signupMsg.innerHTML = '<div class="msg err">Erro de conexão. Tente novamente.</div>';
+  }
+});
+
+async function loadSlots(){
+  selectedTime = null;
+  submitBtn.disabled = true;
+  updateSummary();
+  const date = dateInput.value;
+  if(!date) return;
+  if(!selectedBarberId){
+    slotsEl.innerHTML = '<div class="closed-day">Selecione um barbeiro acima.</div>';
+    return;
+  }
+  const duration = totalDuration();
+  if(!duration){
+    slotsEl.innerHTML = '<div class="closed-day">Selecione ao menos um serviço acima.</div>';
+    return;
+  }
+  slotsEl.innerHTML = '<div class="closed-day">Carregando horários…</div>';
+  const res = await fetch(`${API}/api/slots?date=${date}&barberId=${selectedBarberId}&duration=${duration}`);
+  const data = await res.json();
+
+  if(!data.open){
+    slotsEl.innerHTML = '<div class="closed-day">Não atendemos nesse dia. Escolha entre terça e sábado.</div>';
+    return;
+  }
+
+  slotsEl.innerHTML = '';
+  data.slots.forEach(s=>{
+    const div = document.createElement('div');
+    div.className = 'slot' + (s.available ? '' : ' taken');
+    div.textContent = s.time;
+    if(s.available){
+      div.addEventListener('click', ()=>{
+        document.querySelectorAll('.slot').forEach(el=>el.classList.remove('selected'));
+        div.classList.add('selected');
+        selectedTime = s.time;
+        submitBtn.disabled = false;
+        updateSummary();
+      });
+    }
+    slotsEl.appendChild(div);
+  });
+}
+
+function updateSummary(){
+  if(selectedTime && dateInput.value){
+    const d = new Date(dateInput.value + 'T00:00:00');
+    const fmt = d.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+    const barberRow = document.querySelector('.barber-table tr.selected .b-name');
+    const barberName = barberRow ? barberRow.textContent : '';
+    summaryEl.textContent = `Selecionado: ${barberName} · ${fmt}, às ${selectedTime} (${totalDuration()} min)`;
+  } else {
+    summaryEl.textContent = '';
+  }
+}
+
+dateInput.addEventListener('change', loadSlots);
+
+submitBtn.addEventListener('click', async ()=>{
+  msgEl.innerHTML = '';
+  const email = document.getElementById('email').value.trim();
+  const notes = document.getElementById('notes').value.trim();
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Enviando…';
+
+  try{
+    const res = await fetch(`${API}/api/book`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json', 'Authorization': `Bearer ${authToken}`},
+      body: JSON.stringify({date: dateInput.value, time: selectedTime, barberId: selectedBarberId, serviceIds: selectedServiceIds, email, notes})
+    });
+    const data = await res.json();
+    if(!res.ok){
+      msgEl.innerHTML = `<div class="msg err">${data.error}</div>`;
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Confirmar agendamento';
+      if(res.status === 401) logout();
+      else loadSlots();
+      return;
+    }
+    msgEl.innerHTML = `<div class="msg ok">Agendamento confirmado para ${dateInput.value} às ${selectedTime}. Você receberá a confirmação por telefone/e-mail.</div>`;
+    submitBtn.textContent = 'Confirmar agendamento';
+    document.getElementById('email').value='';
+    document.getElementById('notes').value='';
+    selectedServiceIds = [];
+    document.querySelectorAll('.service-row').forEach(el=>el.classList.remove('checked'));
+    updateServicesSummary();
+    loadSlots();
+  }catch(err){
+    msgEl.innerHTML = '<div class="msg err">Erro de conexão. Tente novamente.</div>';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Confirmar agendamento';
+  }
+});
+</script>
+</body>
+</html>
