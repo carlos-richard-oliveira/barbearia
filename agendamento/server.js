@@ -27,7 +27,7 @@ const BUSINESS_NAME = process.env.BUSINESS_NAME || 'Meu Negócio';
 const OPEN_WEEKDAYS = [2, 3, 4, 5, 6]; // terça a sábado
 const OPEN_HOUR = 10; // 10h
 const CLOSE_HOUR = 18; // 18h
-const START_GRID_MINUTES = 15; // horários de início disponíveis a cada 15 minutos
+const START_GRID_MINUTES = 30; // horários de início disponíveis a cada 30 minutos
 const DEFAULT_DURATION = 60; // usado como fallback para agendamentos antigos sem duração salva
 
 // ===== Serviços oferecidos =====
