@@ -66,6 +66,22 @@ function generateStartTimes(durationMinutes) {
   return times;
 }
 
+// Gera a grade COMPLETA de horários do dia (independente da duração do
+// serviço escolhido). Usada só para exibição em /api/slots, para que
+// horários que não cabem no dia apareçam desabilitados em vez de sumirem
+// da lista conforme o cliente soma mais serviços.
+function generateFullDayStarts() {
+  const times = [];
+  const openMinutes = OPEN_HOUR * 60;
+  const closeMinutes = CLOSE_HOUR * 60;
+  for (let m = openMinutes; m < closeMinutes; m += START_GRID_MINUTES) {
+    const h = Math.floor(m / 60);
+    const mm = m % 60;
+    times.push(`${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`);
+  }
+  return times;
+}
+
 function timeToMinutes(timeStr) {
   const [h, m] = timeStr.split(':').map(Number);
   return h * 60 + m;
@@ -198,7 +214,7 @@ app.get('/api/slots', async (req, res) => {
     console.error('Erro ao consultar Google Calendar do barbeiro:', err.message);
   }
 
-  const candidateStarts = generateStartTimes(durationMinutes);
+  const candidateStarts = generateFullDayStarts();
   const slots = candidateStarts.map((time) => {
     const startMin = timeToMinutes(time);
     const endMin = startMin + durationMinutes;
@@ -328,8 +344,8 @@ app.post('/api/book', requireUser, async (req, res) => {
     return res.status(400).json({ error: 'Não atendemos nesse dia (só de terça a sábado).' });
   }
 
-  if (!generateStartTimes(durationMinutes).includes(time)) {
-    return res.status(400).json({ error: 'Horário inválido para a duração escolhida. Atendemos das 10h às 18h.' });
+  if (!generateFullDayStarts().includes(time)) {
+    return res.status(400).json({ error: 'Horário inválido. Atendemos das 10h às 18h (o atendimento pode ultrapassar esse horário se o serviço for longo).' });
   }
 
   // Não permite marcar em datas/horários passados
@@ -461,8 +477,8 @@ app.put('/api/admin/bookings/:id/reschedule', requireAdmin, async (req, res) => 
   if (!booking) return res.status(404).json({ error: 'Agendamento não encontrado.' });
 
   const durationMinutes = booking.duration || DEFAULT_DURATION;
-  if (!generateStartTimes(durationMinutes).includes(time)) {
-    return res.status(400).json({ error: `Horário inválido para a duração do serviço (${durationMinutes} min). Atendemos das 10h às 18h.` });
+  if (!generateFullDayStarts().includes(time)) {
+    return res.status(400).json({ error: 'Horário inválido. Atendemos das 10h às 18h (o atendimento pode ultrapassar esse horário se o serviço for longo).' });
   }
 
   let targetBarberId = booking.barberId;
@@ -698,8 +714,8 @@ app.post('/api/barber/book', requireBarber, async (req, res) => {
   if (!isDateOpen(date)) {
     return res.status(400).json({ error: 'Não atendemos nesse dia (só de terça a sábado).' });
   }
-  if (!generateStartTimes(durationMinutes).includes(time)) {
-    return res.status(400).json({ error: 'Horário inválido para a duração escolhida. Atendemos das 10h às 18h.' });
+  if (!generateFullDayStarts().includes(time)) {
+    return res.status(400).json({ error: 'Horário inválido. Atendemos das 10h às 18h (o atendimento pode ultrapassar esse horário se o serviço for longo).' });
   }
 
   const barber = req.barber;
