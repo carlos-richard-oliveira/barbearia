@@ -488,6 +488,7 @@ async function loadServices(){
 }
 
 // ===== Horários (agenda própria do barbeiro logado) =====
+let slotsRequestId = 0;
 async function loadSlots(){
   selectedTime = null;
   createBookingBtn.disabled = true;
@@ -497,9 +498,11 @@ async function loadSlots(){
     slotsEl.innerHTML = '<div class="empty-note">Escolha o serviço e a data.</div>';
     return;
   }
+  const thisRequestId = ++slotsRequestId;
   slotsEl.innerHTML = '<div class="empty-note">Carregando horários…</div>';
   const res = await fetch(`${API}/api/slots?date=${date}&barberId=${barberInfo.id}&duration=${duration}`);
   const data = await res.json();
+  if(thisRequestId !== slotsRequestId) return;
   if(!data.open){
     slotsEl.innerHTML = '<div class="empty-note">Fora do horário de funcionamento (terça a sábado).</div>';
     return;

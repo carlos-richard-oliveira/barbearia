@@ -506,6 +506,7 @@ document.getElementById('signupBtn').addEventListener('click', async ()=>{
   }
 });
 
+let slotsRequestId = 0;
 async function loadSlots(){
   selectedTime = null;
   submitBtn.disabled = true;
@@ -521,9 +522,15 @@ async function loadSlots(){
     slotsEl.innerHTML = '<div class="closed-day">Selecione ao menos um serviço acima.</div>';
     return;
   }
+  const thisRequestId = ++slotsRequestId;
   slotsEl.innerHTML = '<div class="closed-day">Carregando horários…</div>';
   const res = await fetch(`${API}/api/slots?date=${date}&barberId=${selectedBarberId}&duration=${duration}`);
   const data = await res.json();
+
+  // Se o usuário já clicou em outro serviço/data enquanto essa busca estava
+  // rodando, uma requisição mais nova já está em andamento (ou já terminou).
+  // Descartamos esse resultado desatualizado para não sobrescrever a tela.
+  if(thisRequestId !== slotsRequestId) return;
 
   if(!data.open){
     slotsEl.innerHTML = '<div class="closed-day">Não atendemos nesse dia. Escolha entre terça e sábado.</div>';
