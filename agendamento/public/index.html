@@ -200,7 +200,7 @@
       </div>
       <div class="field">
         <label for="signupPhone">Telefone / WhatsApp</label>
-        <input type="tel" id="signupPhone" placeholder="(11) 90000-0000">
+        <input type="tel" id="signupPhone" placeholder="(11) 90000-0000" inputmode="numeric" maxlength="15">
       </div>
       <div class="field">
         <label for="signupPassword">Senha</label>
@@ -319,6 +319,17 @@ function maskCPF(input){
     input.value = v;
   });
 }
+function maskPhoneDigitsOnly(input){
+  input.addEventListener('input', ()=>{
+    let v = input.value.replace(/\D/g,'').slice(0,11);
+    if(v.length > 10) v = v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    else if(v.length > 5) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+    else if(v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+    else if(v.length > 0) v = v.replace(/(\d{0,2})/, '($1');
+    input.value = v;
+  });
+}
+maskPhoneDigitsOnly(document.getElementById('signupPhone'));
 maskCPF(document.getElementById('loginCpf'));
 maskCPF(document.getElementById('signupCpf'));
 
@@ -476,6 +487,11 @@ document.getElementById('signupBtn').addEventListener('click', async ()=>{
     signupMsg.innerHTML = '<div class="msg err">Preencha todos os campos.</div>';
     return;
   }
+  const phoneDigitsSignup = phone.replace(/\D/g,'');
+  if(phoneDigitsSignup.length < 10 || phoneDigitsSignup.length > 11){
+    signupMsg.innerHTML = '<div class="msg err">Telefone inválido. Informe o número completo com DDD.</div>';
+    return;
+  }
   if(password.length < 6){
     signupMsg.innerHTML = '<div class="msg err">A senha precisa ter pelo menos 6 caracteres.</div>';
     return;
@@ -508,6 +524,7 @@ document.getElementById('signupBtn').addEventListener('click', async ()=>{
 
 let slotsRequestId = 0;
 async function loadSlots(){
+  const previouslySelectedTime = selectedTime;
   selectedTime = null;
   submitBtn.disabled = true;
   updateSummary();
@@ -549,10 +566,24 @@ async function loadSlots(){
         selectedTime = s.time;
         submitBtn.disabled = false;
         updateSummary();
+        msgEl.innerHTML = '';
       });
     }
     slotsEl.appendChild(div);
   });
+
+  // Preserva/revalida o horário que o cliente já tinha escolhido antes de
+  // somar mais serviços. Se ele deixou de caber (conflito com outro
+  // agendamento), mostra uma mensagem clara em vez de só desmarcar.
+  if(previouslySelectedTime){
+    const stillThere = data.slots.find(s => s.time === previouslySelectedTime);
+    if(stillThere && stillThere.available){
+      const div = Array.from(slotsEl.children).find(el => el.textContent === previouslySelectedTime);
+      if(div){ div.classList.add('selected'); selectedTime = previouslySelectedTime; submitBtn.disabled = false; updateSummary(); }
+    } else {
+      msgEl.innerHTML = '<div class="msg err">O horário '+previouslySelectedTime+' ficou indisponível para a duração total dos serviços selecionados (conflito com outro agendamento). Escolha outro horário.</div>';
+    }
+  }
 }
 
 function updateSummary(){
