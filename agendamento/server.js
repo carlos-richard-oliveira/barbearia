@@ -255,6 +255,11 @@ app.post('/api/signup', async (req, res) => {
     return res.status(400).json({ error: 'CPF inválido. Confira os números digitados.' });
   }
 
+  const cleanPhoneCheck = onlyDigits(phone);
+  if (cleanPhoneCheck.length < 10 || cleanPhoneCheck.length > 11) {
+    return res.status(400).json({ error: 'Telefone inválido. Informe o número completo com DDD.' });
+  }
+
   if (password.length < 6) {
     return res.status(400).json({ error: 'A senha precisa ter pelo menos 6 caracteres.' });
   }
@@ -704,6 +709,10 @@ app.post('/api/barber/book', requireBarber, async (req, res) => {
   if (!date || !time || !clientName || !clientName.trim() || !clientPhone) {
     return res.status(400).json({ error: 'Informe data, horário, nome e telefone do cliente.' });
   }
+  const cleanClientPhone = onlyDigits(clientPhone);
+  if (cleanClientPhone.length < 10 || cleanClientPhone.length > 11) {
+    return res.status(400).json({ error: 'Telefone do cliente inválido. Informe o número completo com DDD.' });
+  }
 
   const services = resolveServices(serviceIds);
   if (!services) {
@@ -753,7 +762,7 @@ app.post('/api/barber/book', requireBarber, async (req, res) => {
     barberId: barber.id,
     barberName: barber.name,
     name: clientName.trim(),
-    phone: onlyDigits(clientPhone),
+    phone: cleanClientPhone,
     cpf: cleanCpf,
     email: email || null,
     notes: notes || null,
